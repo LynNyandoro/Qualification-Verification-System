@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api";
 import { useAuth } from "../auth";
+import { ThemeToggle } from "../theme";
 
 export default function RegisterPage() {
   const { setSession } = useAuth();
@@ -11,7 +12,7 @@ export default function RegisterPage() {
     email: "",
     fullName: "",
     password: "",
-    role: "VERIFIER",
+    role: "STUDENT",
   });
   const [error, setError] = useState("");
 
@@ -29,6 +30,7 @@ export default function RegisterPage() {
 
   return (
     <div className="auth-shell">
+      <ThemeToggle />
       <form className="auth-card" onSubmit={onSubmit}>
         <div className="kicker">Create account</div>
         <h1>Join QVS</h1>
@@ -58,6 +60,7 @@ export default function RegisterPage() {
         <label className="field">
           Role
           <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+            <option value="STUDENT">Student / graduate</option>
             <option value="VERIFIER">Verifier / employer</option>
             <option value="ISSUER">Issuer / institution</option>
           </select>

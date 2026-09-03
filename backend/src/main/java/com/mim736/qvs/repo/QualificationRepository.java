@@ -18,9 +18,22 @@ public interface QualificationRepository extends JpaRepository<Qualification, Lo
 
     boolean existsByVerificationCode(String verificationCode);
 
+    boolean existsByCredentialId(String credentialId);
+
+    long countByCredentialIdStartingWith(String prefix);
+
+    boolean existsByHolderUsernameIgnoreCaseAndTitle(String holderUsername, String title);
+
+    List<Qualification> findByHolderUsernameIgnoreCaseOrderByCreatedAtDesc(String holderUsername);
+
     @Query("""
             SELECT q FROM Qualification q
-            WHERE (:holderName IS NULL OR LOWER(q.holderName) LIKE LOWER(CONCAT('%', :holderName, '%')))
+            WHERE (:q IS NULL
+                OR LOWER(q.holderName) LIKE LOWER(CONCAT('%', :q, '%'))
+                OR LOWER(q.verificationCode) LIKE LOWER(CONCAT('%', :q, '%'))
+                OR LOWER(q.credentialId) LIKE LOWER(CONCAT('%', :q, '%'))
+                OR (q.holderNationalId IS NOT NULL AND LOWER(q.holderNationalId) LIKE LOWER(CONCAT('%', :q, '%'))))
+              AND (:holderName IS NULL OR LOWER(q.holderName) LIKE LOWER(CONCAT('%', :holderName, '%')))
               AND (:title IS NULL OR LOWER(q.title) LIKE LOWER(CONCAT('%', :title, '%')))
               AND (:institution IS NULL OR LOWER(q.issuingInstitution) LIKE LOWER(CONCAT('%', :institution, '%')))
               AND (:type IS NULL OR q.type = :type)
@@ -28,10 +41,15 @@ public interface QualificationRepository extends JpaRepository<Qualification, Lo
             ORDER BY q.createdAt DESC
             """)
     List<Qualification> search(
+            @Param("q") String query,
             @Param("holderName") String holderName,
             @Param("title") String title,
             @Param("institution") String institution,
             @Param("type") QualificationType type,
             @Param("status") QualificationStatus status
     );
+
+    long countByHolderUsernameIgnoreCase(String holderUsername);
+
+    long countByIssuingInstitution(String issuingInstitution);
 }

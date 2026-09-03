@@ -14,6 +14,7 @@ public class QualificationResponse {
     private String verificationCode;
     private String holderName;
     private String holderNationalId;
+    private String holderUsername;
     private String title;
     private QualificationType type;
     private String issuingInstitution;
@@ -32,6 +33,7 @@ public class QualificationResponse {
         response.verificationCode = qualification.getVerificationCode();
         response.holderName = qualification.getHolderName();
         response.holderNationalId = qualification.getHolderNationalId();
+        response.holderUsername = qualification.getHolderUsername();
         response.title = qualification.getTitle();
         response.type = qualification.getType();
         response.issuingInstitution = qualification.getIssuingInstitution();
@@ -63,6 +65,10 @@ public class QualificationResponse {
 
     public String getHolderNationalId() {
         return holderNationalId;
+    }
+
+    public String getHolderUsername() {
+        return holderUsername;
     }
 
     public String getTitle() {

@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../api";
 import { useAuth } from "../auth";
 
 const empty = {
   holderName: "",
   holderNationalId: "",
+  holderUsername: "",
   title: "",
   type: "DEGREE",
   issuingInstitution: "",
@@ -15,12 +16,29 @@ const empty = {
 
 export default function RegisterQualificationPage() {
   const { session } = useAuth();
-  const [form, setForm] = useState(empty);
+  const [form, setForm] = useState({ ...empty, issuingInstitution: session?.institutionName || "" });
+  const [students, setStudents] = useState([]);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    api.get("/students").then((res) => setStudents(res.data)).catch(() => setStudents([]));
+  }, []);
+
   if (session?.role !== "ADMIN" && session?.role !== "ISSUER") {
-    return <p>Only issuing institutions can register qualifications.</p>;
+    return <p>Only issuing institutions can award qualifications.</p>;
+  }
+
+  const awardable = students.filter((row) => row.studentStage !== "ENROLLED");
+
+  function onPickStudent(username) {
+    const picked = students.find((row) => row.username === username);
+    setForm({
+      ...form,
+      holderUsername: username,
+      holderName: picked ? picked.fullName : form.holderName,
+      issuingInstitution: picked?.institutionName || session?.institutionName || form.issuingInstitution,
+    });
   }
 
   async function onSubmit(event) {
@@ -30,12 +48,13 @@ export default function RegisterQualificationPage() {
     try {
       const payload = {
         ...form,
+        holderUsername: form.holderUsername || null,
         nqfLevel: form.nqfLevel ? Number(form.nqfLevel) : null,
         expiryDate: form.expiryDate || null,
       };
       const { data } = await api.post("/qualifications", payload);
       setResult(data);
-      setForm(empty);
+      setForm({ ...empty, issuingInstitution: session?.institutionName || "" });
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed");
     }
@@ -43,15 +62,30 @@ export default function RegisterQualificationPage() {
 
   return (
     <div>
-      <div className="kicker">Issuing</div>
-      <h1>Register a qualification</h1>
+      <div className="page-head">
+        <div>
+          <h1>Award a qualification</h1>
+          <p className="muted">Newly enrolled students cannot receive an award until they are marked as graduating or alumni.</p>
+        </div>
+      </div>
       {error && <div className="flash error">{error}</div>}
       {result && (
         <div className="flash ok">
-          Registered. Verification code <strong>{result.verificationCode}</strong>. Integrity hash stored.
+          Awarded. Verification code <strong>{result.verificationCode}</strong>.
         </div>
       )}
       <form className="panel" onSubmit={onSubmit}>
+        <label className="field">
+          Student (graduating or alumni)
+          <select value={form.holderUsername} onChange={(e) => onPickStudent(e.target.value)}>
+            <option value="">Select a student</option>
+            {awardable.map((row) => (
+              <option key={row.id} value={row.username}>
+                {row.fullName} ({row.username} · {row.studentStage})
+              </option>
+            ))}
+          </select>
+        </label>
         <div className="row">
           <label className="field">
             Holder name

@@ -13,6 +13,8 @@ public class QualificationRequest {
 
     private String holderNationalId;
 
+    private String holderUsername;
+
     @NotBlank
     private String title;
 
@@ -43,6 +45,14 @@ public class QualificationRequest {
 
     public void setHolderNationalId(String holderNationalId) {
         this.holderNationalId = holderNationalId;
+    }
+
+    public String getHolderUsername() {
+        return holderUsername;
+    }
+
+    public void setHolderUsername(String holderUsername) {
+        this.holderUsername = holderUsername;
     }
 
     public String getTitle() {

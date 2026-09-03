@@ -23,10 +23,10 @@ public class Qualification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 36)
+    @Column(nullable = false, unique = true, length = 48)
     private String credentialId;
 
-    @Column(nullable = false, unique = true, length = 24)
+    @Column(nullable = false, unique = true, length = 48)
     private String verificationCode;
 
     @Column(nullable = false, length = 160)
@@ -34,6 +34,9 @@ public class Qualification {
 
     @Column(length = 40)
     private String holderNationalId;
+
+    @Column(length = 80)
+    private String holderUsername;
 
     @Column(nullable = false, length = 200)
     private String title;
@@ -107,6 +110,14 @@ public class Qualification {
 
     public void setHolderNationalId(String holderNationalId) {
         this.holderNationalId = holderNationalId;
+    }
+
+    public String getHolderUsername() {
+        return holderUsername;
+    }
+
+    public void setHolderUsername(String holderUsername) {
+        this.holderUsername = holderUsername;
     }
 
     public String getTitle() {

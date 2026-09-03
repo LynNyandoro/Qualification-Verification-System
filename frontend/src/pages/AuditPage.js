@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../api";
+import { PersonCell } from "../components/PersonCell";
 
 export default function AuditPage() {
   const [rows, setRows] = useState([]);
@@ -14,15 +15,19 @@ export default function AuditPage() {
 
   return (
     <div>
-      <div className="kicker">Accountability</div>
-      <h1>Verification audit history</h1>
+      <div className="page-head">
+        <div>
+          <h1>Verification audit</h1>
+          <p className="muted">Every authenticity check is kept as an append-only history.</p>
+        </div>
+      </div>
       {error && <div className="flash error">{error}</div>}
-      <div className="panel">
+      <div className="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>When</th>
               <th>Actor</th>
+              <th>When</th>
               <th>Code / ID</th>
               <th>Method</th>
               <th>Result</th>
@@ -31,8 +36,10 @@ export default function AuditPage() {
           <tbody>
             {rows.map((row) => (
               <tr key={row.id}>
+                <td>
+                  <PersonCell name={row.verifiedBy} subtitle={row.method} />
+                </td>
                 <td>{new Date(row.verifiedAt).toLocaleString()}</td>
-                <td>{row.verifiedBy}</td>
                 <td>{row.verificationCode || row.credentialId}</td>
                 <td>{row.method}</td>
                 <td>
@@ -42,8 +49,8 @@ export default function AuditPage() {
             ))}
           </tbody>
         </table>
-        {rows.length === 0 && <p className="muted">No verification events recorded yet.</p>}
       </div>
+      {rows.length === 0 && <p className="muted">No verification events recorded yet.</p>}
     </div>
   );
 }

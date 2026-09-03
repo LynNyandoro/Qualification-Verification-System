@@ -8,12 +8,16 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import RegisterQualificationPage from "./pages/RegisterQualificationPage";
 import SearchPage from "./pages/SearchPage";
+import StudentsPage from "./pages/StudentsPage";
+import StudentDetailPage from "./pages/StudentDetailPage";
+import AdminPage from "./pages/AdminPage";
 import VerifyPage from "./pages/VerifyPage";
+import { useAuth } from "./auth";
 
 function Protected({ children }) {
-  const raw = localStorage.getItem("qvs-auth");
+  const { session } = useAuth();
   const location = useLocation();
-  if (!raw) {
+  if (!session) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
   return children;
@@ -46,6 +50,9 @@ export default function App() {
           }
         >
           <Route path="/" element={<DashboardPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/students" element={<StudentsPage />} />
+          <Route path="/students/:id" element={<StudentDetailPage />} />
           <Route path="/qualifications/new" element={<RegisterQualificationPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/verify" element={<VerifyPage />} />

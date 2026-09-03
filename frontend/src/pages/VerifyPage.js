@@ -2,7 +2,7 @@ import { useState } from "react";
 import api from "../api";
 
 export default function VerifyPage() {
-  const [form, setForm] = useState({ verificationCode: "QVS-DEMO12345", credentialId: "", expectedHash: "" });
+  const [form, setForm] = useState({ verificationCode: "QVS-DEMO12345", credentialId: "MISM-MSU-0001", expectedHash: "" });
   const [outcome, setOutcome] = useState(null);
   const [error, setError] = useState("");
 
@@ -24,20 +24,31 @@ export default function VerifyPage() {
 
   return (
     <div>
-      <div className="kicker">Authenticity</div>
-      <h1>Verify a qualification</h1>
+      <div className="page-head">
+        <div>
+              <h1>Confirm a credential</h1>
+          <p className="muted">
+            Search by holder name first if you prefer, then paste the verification code or credential ID to confirm
+            authenticity and write an audit record.
+          </p>
+        </div>
+      </div>
       <form className="panel" onSubmit={onSubmit}>
         <label className="field">
           Verification code
           <input
             value={form.verificationCode}
             onChange={(e) => setForm({ ...form, verificationCode: e.target.value })}
-            placeholder="QVS-XXXXXXXXXX"
+            placeholder="QVS-DEMO12345"
           />
         </label>
         <label className="field">
           Credential ID (optional)
-          <input value={form.credentialId} onChange={(e) => setForm({ ...form, credentialId: e.target.value })} />
+          <input
+            value={form.credentialId}
+            onChange={(e) => setForm({ ...form, credentialId: e.target.value })}
+            placeholder="MISM-MSU-0001"
+          />
         </label>
         <label className="field">
           Expected SHA-256 hash (optional integrity check)

@@ -1,82 +1,130 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../api";
+import { useAuth } from "../auth";
+import { CopyId } from "../components/CopyId";
+import { PersonCell } from "../components/PersonCell";
 
 export default function SearchPage() {
-  const [filters, setFilters] = useState({ holderName: "", title: "", institution: "", status: "" });
+  const { session } = useAuth();
+  const isStudent = session?.role === "STUDENT";
+  const [filters, setFilters] = useState({ q: "", status: "" });
   const [rows, setRows] = useState([]);
   const [error, setError] = useState("");
 
-  async function onSubmit(event) {
-    event.preventDefault();
+  async function load(params) {
     setError("");
     try {
-      const { data } = await api.get("/qualifications", { params: { ...filters, status: filters.status || undefined } });
+      const { data } = await api.get("/qualifications", { params });
       setRows(data);
     } catch (err) {
       setError(err.response?.data?.error || "Search failed");
     }
   }
 
+  useEffect(() => {
+    if (isStudent) {
+      load();
+    }
+  }, [isStudent]);
+
+  async function onSubmit(event) {
+    event.preventDefault();
+    await load({
+      q: filters.q || undefined,
+      status: filters.status || undefined,
+    });
+  }
+
   return (
     <div>
-      <div className="kicker">Records</div>
-      <h1>Search qualifications</h1>
-      <form className="panel" onSubmit={onSubmit}>
-        <div className="row">
-          <label className="field">
-            Holder name
-            <input value={filters.holderName} onChange={(e) => setFilters({ ...filters, holderName: e.target.value })} />
-          </label>
-          <label className="field">
-            Title
-            <input value={filters.title} onChange={(e) => setFilters({ ...filters, title: e.target.value })} />
-          </label>
+      <div className="page-head">
+        <div>
+          <h1>{isStudent ? "My qualifications" : "Search qualifications"}</h1>
+          <p className="muted">
+            {isStudent
+              ? "Copy the credential ID or the verification code to share with an employer."
+              : "Find a holder by name, credential ID or verification code."}
+          </p>
         </div>
-        <div className="row">
-          <label className="field">
-            Institution
-            <input value={filters.institution} onChange={(e) => setFilters({ ...filters, institution: e.target.value })} />
-          </label>
-          <label className="field">
-            Status
-            <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}>
-              <option value="">Any</option>
-              <option>ACTIVE</option>
-              <option>REVOKED</option>
-              <option>EXPIRED</option>
-            </select>
-          </label>
-        </div>
-        <button type="submit">Search</button>
-      </form>
+      </div>
+      {!isStudent && (
+        <>
+          <div className="tabs">
+            {["", "ACTIVE", "REVOKED", "EXPIRED"].map((value) => (
+              <button
+                key={value || "all"}
+                type="button"
+                className={`tab ${filters.status === value ? "active" : ""}`}
+                onClick={() => setFilters({ ...filters, status: value })}
+              >
+                {value || "All records"}
+              </button>
+            ))}
+          </div>
+          <form className="toolbar" onSubmit={onSubmit}>
+            <div className="search-field">
+              <input
+                value={filters.q}
+                onChange={(e) => setFilters({ ...filters, q: e.target.value })}
+                placeholder="Search name or credential ID"
+              />
+            </div>
+            <button type="submit">Search</button>
+          </form>
+        </>
+      )}
       {error && <div className="flash error">{error}</div>}
-      <div className="panel" style={{ marginTop: 16 }}>
+      <div className="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Holder</th>
-              <th>Title</th>
-              <th>Institution</th>
-              <th>Code</th>
+              <th>Name / institution</th>
+              <th>Qualification</th>
+              <th>Credential ID</th>
+              <th>Verification code</th>
               <th>Status</th>
+              {!isStudent && <th></th>}
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
               <tr key={row.id}>
-                <td>{row.holderName}</td>
-                <td>{row.title}</td>
-                <td>{row.issuingInstitution}</td>
-                <td>{row.verificationCode}</td>
+                <td>
+                  <PersonCell name={row.holderName} subtitle={row.issuingInstitution} />
+                </td>
+                <td>
+                  <div className="person-name">{row.title}</div>
+                  <div className="person-sub">{row.type}</div>
+                </td>
+                <td>
+                  <CopyId value={row.credentialId} />
+                </td>
+                <td>
+                  <CopyId value={row.verificationCode} />
+                </td>
                 <td>
                   <span className={`badge ${row.status}`}>{row.status}</span>
                 </td>
+                {!isStudent && (
+                  <td>
+                    <Link className="row-action button" to="/verify">
+                      View
+                    </Link>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
-        {rows.length === 0 && <p className="muted">No results yet. Run a search to retrieve records.</p>}
       </div>
+      {rows.length === 0 && (
+        <p className="muted">
+          {isStudent
+            ? "No qualifications are linked to this student account yet."
+            : "No results yet. Search by name or code."}
+        </p>
+      )}
     </div>
   );
 }

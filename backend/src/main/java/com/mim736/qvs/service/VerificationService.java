@@ -53,6 +53,10 @@ public class VerificationService {
                     .orElse(null);
             method = "CODE";
         }
+        if (qualification == null && !isBlank(request.getVerificationCode())) {
+            qualification = qualificationRepository.findByCredentialId(request.getVerificationCode().trim())
+                    .orElse(null);
+        }
         if (qualification == null && !isBlank(request.getCredentialId())) {
             qualification = qualificationRepository.findByCredentialId(request.getCredentialId().trim()).orElse(null);
             method = "CREDENTIAL_ID";

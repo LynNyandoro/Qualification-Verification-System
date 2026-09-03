@@ -7,8 +7,12 @@ Record screen + voice. Suggested sequence:
 3. **Git workflow (2 min)** — Show `git log --oneline --graph --all`, `docs/GIT_WORKFLOW.md`, a merged feature branch, `docs/CONFLICT_LOG.md`, and `docs/ISSUES.md`.
 4. **CI/CD (2 min)** — Open `.github/workflows/ci.yml`. If the repo is on GitHub, show a green Actions run, Surefire/JaCoCo artefacts, coverage gate, Docker build job.
 5. **Live system (6 min)**
+   - Sign in as `freshman` (newly enrolled, no ID), `graduating` (awaiting award), and `student` (copy `MISM-MSU-0001` or `QVS-DEMO12345`)
+   - Sign in as `issuer` (MSU) and open Students, then **View** a student to see credentials
+   - Sign in as `admin` / `Admin@123` and open **Directory**
+   - Sign in as `econet` / `Econet@123`, search by name **or** credential ID `MISM-MSU-0001` **or** verification code `QVS-DEMO12345`, then verify
    - Sign in as `issuer` / `Issuer@123`
-   - Register a qualification; copy the verification code
+   - Register a qualification (optionally link a student username); copy the verification code
    - Sign out, sign in as `verifier` / `Verifier@123`
    - Search by holder name
    - Verify the new code (VALID) and a bogus code (NOT_FOUND)

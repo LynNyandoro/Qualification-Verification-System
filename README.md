@@ -15,13 +15,19 @@ DevOps-enabled system for **MIM736 Practical Assignment (August 2026)**. Authori
 
 ## Demo accounts
 
-| Username | Password | Role |
-| --- | --- | --- |
-| `admin` | `Admin@123` | Administrator |
-| `issuer` | `Issuer@123` | Issuing institution |
-| `verifier` | `Verifier@123` | Employer / verifier |
+| Username | Password | Role | Notes |
+| --- | --- | --- | --- |
+| `student` | `Student@123` | Student (alumni, MSU) | Amina Chikomo · ID `MISM-MSU-0001` · code `QVS-DEMO12345` |
+| `graduating` | `Graduating@123` | Student (finishing, NUST) | Tawanda Ncube · no award yet |
+| `freshman` | `Freshman@123` | Student (new, UZ) | Rudo Moyo · no award yet |
+| Extra students | `Student@123` | Student | Usernames `msu001`–`msu099`, `nust000`–`nust099`, `uz000`–`uz099` |
+| `issuer` | `Issuer@123` | MSU registrar | |
+| `nust` / `uz` | `Nust@123` / `Uz@123` | NUST / UZ registrars | |
+| `econet` / `cbz` / `delta` | `Econet@123` / `Cbz@123` / `Delta@123` | Employer verifiers | |
+| `verifier` | `Verifier@123` | Demo employer | Same verify role as the three companies |
+| `admin` | `Admin@123` | Operator | Directory of every user, campus and student |
 
-Seeded credential: **QVS-DEMO12345** (Amina Chikomo, Master of Information Systems Management).
+Seeded volume: **3 universities** (UZ, NUST, MSU) with **100 students each**, most alumni holding a unique programme **credential ID** (for example `MISM-MSU-0001`) and a separate **verification code** (`QVS-…`). **3 employers** (Econet, CBZ, Delta). Students copy either value; employers paste it in Search or Verify.
 
 ## Local run (development)
 
@@ -41,6 +47,13 @@ npm start
 ```
 
 Open [http://localhost:3000](http://localhost:3000). The CRA dev server proxies `/api` to `http://localhost:8080`.
+
+If `mvn spring-boot:run` fails with `Value not permitted for column ... "STUDENT"`, stop any other Java process on port 8080, then run again. The API now converts the old H2 `ROLE` enum to `VARCHAR` on startup. To reset demo data completely:
+
+```bash
+rm -f backend/data/qvs.mv.db backend/data/qvs.trace.db
+cd backend && mvn spring-boot:run
+```
 
 ## Tests and quality gates
 

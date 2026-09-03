@@ -4,30 +4,34 @@ import com.mim736.qvs.domain.Role;
 import com.mim736.qvs.domain.StudentStage;
 import com.mim736.qvs.domain.UserAccount;
 
-public class AuthResponse {
+public class UserSummaryResponse {
 
-    private String token;
+    private Long id;
     private String username;
     private String fullName;
+    private String email;
     private Role role;
     private String institutionCode;
     private String institutionName;
     private StudentStage studentStage;
 
-    public AuthResponse(String token, UserAccount account) {
-        this.token = token;
-        this.username = account.getUsername();
-        this.fullName = account.getFullName();
-        this.role = account.getRole();
+    public static UserSummaryResponse from(UserAccount account) {
+        UserSummaryResponse response = new UserSummaryResponse();
+        response.id = account.getId();
+        response.username = account.getUsername();
+        response.fullName = account.getFullName();
+        response.email = account.getEmail();
+        response.role = account.getRole();
+        response.studentStage = account.getStudentStage();
         if (account.getInstitution() != null) {
-            this.institutionCode = account.getInstitution().getCode();
-            this.institutionName = account.getInstitution().getName();
+            response.institutionCode = account.getInstitution().getCode();
+            response.institutionName = account.getInstitution().getName();
         }
-        this.studentStage = account.getStudentStage();
+        return response;
     }
 
-    public String getToken() {
-        return token;
+    public Long getId() {
+        return id;
     }
 
     public String getUsername() {
@@ -36,6 +40,10 @@ public class AuthResponse {
 
     public String getFullName() {
         return fullName;
+    }
+
+    public String getEmail() {
+        return email;
     }
 
     public Role getRole() {

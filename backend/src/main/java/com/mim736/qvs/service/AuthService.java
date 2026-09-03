@@ -54,8 +54,7 @@ public class AuthService {
         account.setRole(role);
         account.setEnabled(true);
         userAccountRepository.save(account);
-        String token = jwtService.generateToken(account.getUsername(), account.getRole().name());
-        return new AuthResponse(token, account.getUsername(), account.getFullName(), account.getRole());
+        return new AuthResponse(jwtService.generateToken(account.getUsername(), account.getRole().name()), account);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -63,7 +62,6 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
         UserAccount account = userAccountRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new BusinessException("Invalid credentials"));
-        String token = jwtService.generateToken(account.getUsername(), account.getRole().name());
-        return new AuthResponse(token, account.getUsername(), account.getFullName(), account.getRole());
+        return new AuthResponse(jwtService.generateToken(account.getUsername(), account.getRole().name()), account);
     }
 }

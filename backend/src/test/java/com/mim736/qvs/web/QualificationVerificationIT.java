@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.LocalDate;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -165,6 +166,100 @@ class QualificationVerificationIT {
                         .content(objectMapper.writeValueAsString(verifyRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result").value("REVOKED"));
+    }
+
+    @Test
+    void studentCanViewOwnCredentialButCannotRegister() throws Exception {
+        String studentToken = login("student", "Student@123");
+
+        mockMvc.perform(get("/api/qualifications")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].holderName").value("Amina Chikomo"))
+                .andExpect(jsonPath("$[*].verificationCode", hasItem("QVS-DEMO12345")))
+                .andExpect(jsonPath("$[*].credentialId", hasItem("MISM-MSU-0001")))
+                .andExpect(jsonPath("$[0].holderUsername").value("student"));
+
+        QualificationRequest request = new QualificationRequest();
+        request.setHolderName("Should Fail");
+        request.setTitle("Unauthorised Degree");
+        request.setType(QualificationType.DEGREE);
+        request.setIssuingInstitution("NUST");
+        request.setIssueDate(LocalDate.of(2022, 1, 1));
+
+        mockMvc.perform(post("/api/qualifications")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void verifierCanSearchByHolderNameOrQualificationCode() throws Exception {
+        String token = login("verifier", "Verifier@123");
+
+        mockMvc.perform(get("/api/qualifications")
+                        .header("Authorization", "Bearer " + token)
+                        .param("q", "QVS-DEMO12345"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].holderName").value("Amina Chikomo"));
+
+        mockMvc.perform(get("/api/qualifications")
+                        .header("Authorization", "Bearer " + token)
+                        .param("q", "MISM-MSU-0001"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].holderName").value("Amina Chikomo"));
+
+        mockMvc.perform(get("/api/qualifications")
+                        .header("Authorization", "Bearer " + token)
+                        .param("q", "Amina"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].credentialId", hasItem("MISM-MSU-0001")))
+                .andExpect(jsonPath("$[*].verificationCode", hasItem("QVS-DEMO12345")));
+    }
+
+    @Test
+    void issuerSeesOwnInstitutionStudents() throws Exception {
+        String issuerToken = login("issuer", "Issuer@123");
+        mockMvc.perform(get("/api/students")
+                        .header("Authorization", "Bearer " + issuerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].username", hasItem("student")))
+                .andExpect(jsonPath("$[*].studentStage", hasItem("ALUMNI")));
+
+        String freshmanToken = login("freshman", "Freshman@123");
+        mockMvc.perform(get("/api/qualifications")
+                        .header("Authorization", "Bearer " + freshmanToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void adminCanOpenDirectoryAndStudentRecord() throws Exception {
+        String adminToken = login("admin", "Admin@123");
+        mockMvc.perform(get("/api/admin/institutions")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].code", hasItem("MSU")))
+                .andExpect(jsonPath("$[*].studentCount", hasItem(100)));
+
+        mockMvc.perform(get("/api/admin/users")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].username", hasItem("econet")));
+
+        MvcResult students = mockMvc.perform(get("/api/students")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].username", hasItem("student")))
+                .andReturn();
+        long aminaId = objectMapper.readTree(students.getResponse().getContentAsString())
+                .findValues("id").get(0).asLong();
+        mockMvc.perform(get("/api/students/" + aminaId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.student.username").exists())
+                .andExpect(jsonPath("$.credentials").isArray());
     }
 
     private String login(String username, String password) throws Exception {

@@ -20,8 +20,10 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,6 +48,8 @@ class QualificationServiceTest {
         issuer.setUsername("issuer");
         issuer.setRole(Role.ISSUER);
         when(userAccountRepository.findByUsername("issuer")).thenReturn(Optional.of(issuer));
+        when(qualificationRepository.countByCredentialIdStartingWith(ArgumentMatchers.anyString())).thenReturn(0L);
+        when(qualificationRepository.existsByCredentialId(ArgumentMatchers.anyString())).thenReturn(false);
         when(qualificationRepository.existsByVerificationCode(ArgumentMatchers.anyString())).thenReturn(false);
         when(qualificationRepository.save(ArgumentMatchers.any(Qualification.class))).thenAnswer(invocation -> {
             Qualification qualification = invocation.getArgument(0);
@@ -58,6 +62,8 @@ class QualificationServiceTest {
         assertNotNull(response.getCredentialHash());
         assertEquals(64, response.getCredentialHash().length());
         assertNotNull(response.getVerificationCode());
+        assertTrue(response.getVerificationCode().startsWith("QVS-"));
+        assertNotEquals(response.getCredentialId(), response.getVerificationCode());
     }
 
     @Test

@@ -43,18 +43,20 @@ public class QualificationController {
 
     @GetMapping
     public List<QualificationResponse> search(
+            @RequestParam(required = false) String q,
             @RequestParam(required = false) String holderName,
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String institution,
             @RequestParam(required = false) QualificationType type,
-            @RequestParam(required = false) QualificationStatus status
+            @RequestParam(required = false) QualificationStatus status,
+            Authentication authentication
     ) {
-        return qualificationService.search(holderName, title, institution, type, status);
+        return qualificationService.search(q, holderName, title, institution, type, status, authentication.getName());
     }
 
     @GetMapping("/{id}")
-    public QualificationResponse get(@PathVariable Long id) {
-        return qualificationService.getById(id);
+    public QualificationResponse get(@PathVariable Long id, Authentication authentication) {
+        return qualificationService.getById(id, authentication.getName());
     }
 
     @PutMapping("/{id}/revoke")

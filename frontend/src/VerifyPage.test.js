@@ -23,7 +23,7 @@ test("verify page posts a code and shows a valid outcome", async () => {
   fireEvent.click(screen.getByText(/Verify authenticity/i));
 
   await waitFor(() => expect(screen.getByText(/authentic and currently active/i)).toBeInTheDocument());
-  expect(api.post).toHaveBeenCalledWith(
+    expect(api.post).toHaveBeenCalledWith(
     "/verify",
     expect.objectContaining({ verificationCode: "QVS-DEMO12345" })
   );
