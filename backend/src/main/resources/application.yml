@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: qvs-backend
+  datasource:
+    url: jdbc:h2:file:./data/qvs;MODE=PostgreSQL;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+qvs:
+  jwt:
+    secret: ${QVS_JWT_SECRET:change-me-in-production-use-a-256-bit-secret-key-value}
+    expiration-ms: 86400000
+  cors:
+    allowed-origins: ${QVS_CORS_ORIGINS:http://localhost:3000,http://localhost}
+
+logging:
+  level:
+    com.mim736.qvs: INFO
