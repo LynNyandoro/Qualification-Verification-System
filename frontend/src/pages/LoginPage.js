@@ -1,13 +1,17 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import api from "../api";
 import { useAuth } from "../auth";
 
 export default function LoginPage() {
-  const { setSession } = useAuth();
+  const { session, setSession } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: "verifier", password: "Verifier@123" });
   const [error, setError] = useState("");
+
+  if (session) {
+    return <Navigate to="/" replace />;
+  }
 
   async function onSubmit(event) {
     event.preventDefault();
