@@ -92,7 +92,12 @@ export default function DashboardPage() {
               (Amina Chikomo, MISM, Midlands State University). Student login: <strong>student / Student@123</strong>.
               Employers: <strong>econet</strong>, <strong>cbz</strong>, <strong>delta</strong>.
             </p>
-            <Link className="button" to="/verify">
+            {(session?.role === "ADMIN" || session?.role === "ISSUER") && (
+              <Link className="button" to="/qualifications/new">
+                Add Credentials
+              </Link>
+            )}
+            <Link className="button" to="/verify" style={{ marginLeft: "8px" }}>
               Run a verification
             </Link>
           </>

@@ -23,7 +23,7 @@ const titles = {
   "/": "Dashboard",
   "/admin": "Directory",
   "/students": "Students",
-  "/qualifications/new": "Award qualification",
+  "/qualifications/new": "Add credentials",
   "/search": "Records",
   "/verify": "Verify",
   "/audit": "Audit",
@@ -70,7 +70,7 @@ export default function Layout() {
           {canIssue && (
             <NavLink className="nav-link" to="/qualifications/new">
               <Icon d="M12 5v14M5 12h14" />
-              Award
+              Add Credentials
             </NavLink>
           )}
           <NavLink className="nav-link" to="/search">

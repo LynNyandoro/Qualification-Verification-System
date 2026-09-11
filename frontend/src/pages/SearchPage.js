@@ -36,6 +36,15 @@ export default function SearchPage() {
     });
   }
 
+  async function handleRevoke(id) {
+    try {
+      const { data } = await api.put(`/qualifications/${id}/revoke`);
+      setRows((current) => current.map((row) => (row.id === id ? { ...row, status: data.status } : row)));
+    } catch (err) {
+      setError(err.response?.data?.error || "Unable to revoke qualification");
+    }
+  }
+
   return (
     <div>
       <div className="page-head">
@@ -108,9 +117,16 @@ export default function SearchPage() {
                 </td>
                 {!isStudent && (
                   <td>
-                    <Link className="row-action button" to="/verify">
-                      View
-                    </Link>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      <Link className="row-action button" to="/verify">
+                        View
+                      </Link>
+                      {(session?.role === "ADMIN" || session?.role === "ISSUER") && row.status !== "REVOKED" && (
+                        <button type="button" className="button ghost" onClick={() => handleRevoke(row.id)}>
+                          Revoke
+                        </button>
+                      )}
+                    </div>
                   </td>
                 )}
               </tr>
