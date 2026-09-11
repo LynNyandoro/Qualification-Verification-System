@@ -22,6 +22,16 @@ export default function AboutUsPage() {
         </p>
       </div>
 
+      <div className="form-card panel">
+        <h3>Our team</h3>
+        <ul>
+          <li>Lyn Nyandoro</li>
+          <li>Tatenda Benjamin</li>
+          <li>Burton Mareke</li>
+          <li>Tatenda Nyamhunga</li>
+        </ul>
+      </div>
+
       <div className="row">
         <div className="form-card panel">
           <h3>What we do</h3>
