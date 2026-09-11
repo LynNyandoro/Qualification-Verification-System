@@ -27,6 +27,8 @@ const titles = {
   "/search": "Records",
   "/verify": "Verify",
   "/audit": "Audit",
+  "/about": "About Us",
+  "/contact": "Contact Us",
 };
 
 export default function Layout() {
@@ -87,6 +89,14 @@ export default function Layout() {
               Audit
             </NavLink>
           )}
+          <NavLink className="nav-link" to="/about">
+            <Icon d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 15h-2v-2h2zm0-4h-2V7h2z" />
+            About Us
+          </NavLink>
+          <NavLink className="nav-link" to="/contact">
+            <Icon d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm0 2 8 5 8-5" />
+            Contact Us
+          </NavLink>
         </nav>
         <div className="sidebar-foot">
           <ThemeToggle />

@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Layout from "./components/Layout";
 import { AuthContext } from "./auth";
+import AboutUsPage from "./pages/AboutUsPage";
 import AuditPage from "./pages/AuditPage";
+import ContactUsPage from "./pages/ContactUsPage";
 import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -57,6 +59,8 @@ export default function App() {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/verify" element={<VerifyPage />} />
           <Route path="/audit" element={<AuditPage />} />
+          <Route path="/about" element={<AboutUsPage />} />
+          <Route path="/contact" element={<ContactUsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
