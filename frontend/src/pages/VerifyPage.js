@@ -2,7 +2,12 @@ import { useState } from "react";
 import api from "../api";
 
 export default function VerifyPage() {
-  const [form, setForm] = useState({ verificationCode: "QVS-DEMO12345", credentialId: "MISM-MSU-0001", expectedHash: "" });
+  const [form, setForm] = useState({
+    verificationCode: "QVS-DEMO12345",
+    credentialId: "MISM-MSU-0001",
+    candidateName: "",
+    expectedHash: "",
+  });
   const [outcome, setOutcome] = useState(null);
   const [error, setError] = useState("");
 
@@ -14,6 +19,7 @@ export default function VerifyPage() {
       const { data } = await api.post("/verify", {
         verificationCode: form.verificationCode || null,
         credentialId: form.credentialId || null,
+        candidateName: form.candidateName || null,
         expectedHash: form.expectedHash || null,
       });
       setOutcome(data);
@@ -34,6 +40,14 @@ export default function VerifyPage() {
         </div>
       </div>
       <form className="panel" onSubmit={onSubmit}>
+        <label className="field">
+          Candidate name
+          <input
+            value={form.candidateName}
+            onChange={(e) => setForm({ ...form, candidateName: e.target.value })}
+            placeholder="Amina Chikomo"
+          />
+        </label>
         <label className="field">
           Verification code
           <input

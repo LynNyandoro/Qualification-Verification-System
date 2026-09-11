@@ -169,6 +169,35 @@ class QualificationVerificationIT {
     }
 
     @Test
+    void authorizedUserCanVerifyByCandidateName() throws Exception {
+        String issuerToken = login("issuer", "Issuer@123");
+        String verifierToken = login("verifier", "Verifier@123");
+
+        QualificationRequest request = new QualificationRequest();
+        request.setHolderName("Candidate Name Search");
+        request.setTitle("Advanced Diploma in Data Management");
+        request.setType(QualificationType.DIPLOMA);
+        request.setIssuingInstitution("Midlands State University");
+        request.setIssueDate(LocalDate.of(2024, 1, 15));
+
+        mockMvc.perform(post("/api/qualifications")
+                        .header("Authorization", "Bearer " + issuerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        VerifyRequest verifyRequest = new VerifyRequest();
+        verifyRequest.setCandidateName("Candidate Name Search");
+
+        mockMvc.perform(post("/api/verify")
+                        .header("Authorization", "Bearer " + verifierToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(verifyRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value("VALID"));
+    }
+
+    @Test
     void studentCanViewOwnCredentialButCannotRegister() throws Exception {
         String studentToken = login("student", "Student@123");
 

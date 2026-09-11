@@ -40,8 +40,8 @@ public class VerificationService {
 
     @Transactional
     public VerifyResponse verify(VerifyRequest request, String username) {
-        if (isBlank(request.getVerificationCode()) && isBlank(request.getCredentialId())) {
-            throw new BusinessException("Provide a verification code or credential ID");
+        if (isBlank(request.getVerificationCode()) && isBlank(request.getCredentialId()) && isBlank(request.getCandidateName())) {
+            throw new BusinessException("Provide a verification code, credential ID, or candidate name");
         }
         UserAccount verifier = userAccountRepository.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException("Verifier not found"));
@@ -60,6 +60,21 @@ public class VerificationService {
         if (qualification == null && !isBlank(request.getCredentialId())) {
             qualification = qualificationRepository.findByCredentialId(request.getCredentialId().trim()).orElse(null);
             method = "CREDENTIAL_ID";
+        }
+        if (qualification == null && !isBlank(request.getCandidateName())) {
+            String candidateName = request.getCandidateName().trim();
+            List<Qualification> byName = qualificationRepository.search(
+                    null,
+                    candidateName,
+                    null,
+                    null,
+                    null,
+                    null
+            );
+            if (!byName.isEmpty()) {
+                qualification = byName.get(0);
+                method = "CANDIDATE_NAME";
+            }
         }
 
         if (qualification == null) {

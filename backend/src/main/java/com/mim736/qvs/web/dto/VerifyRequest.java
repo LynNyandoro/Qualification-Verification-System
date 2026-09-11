@@ -4,6 +4,7 @@ public class VerifyRequest {
 
     private String verificationCode;
     private String credentialId;
+    private String candidateName;
     private String expectedHash;
 
     public String getVerificationCode() {
@@ -20,6 +21,14 @@ public class VerifyRequest {
 
     public void setCredentialId(String credentialId) {
         this.credentialId = credentialId;
+    }
+
+    public String getCandidateName() {
+        return candidateName;
+    }
+
+    public void setCandidateName(String candidateName) {
+        this.candidateName = candidateName;
     }
 
     public String getExpectedHash() {
