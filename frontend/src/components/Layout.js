@@ -25,6 +25,7 @@ const titles = {
   "/students": "Students",
   "/qualifications/new": "Add credentials",
   "/search": "Records",
+  "/search-name": "Search by name",
   "/verify": "Verify",
   "/audit": "Audit",
   "/about": "About Us",
@@ -77,6 +78,12 @@ export default function Layout() {
             <Icon d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3" />
             {recordsLabel}
           </NavLink>
+          {canVerify && (
+            <NavLink className="nav-link" to="/search-name">
+              <Icon d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3M11 8v6M8 11h6" />
+              Search by name
+            </NavLink>
+          )}
           {canVerify && (
             <NavLink className="nav-link" to="/verify">
               <Icon d="M9 12l2 2 4-4M12 22c5-2 8-6 8-11V6l-8-3-8 3v5c0 5 3 9 8 11z" />

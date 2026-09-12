@@ -10,6 +10,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import RegisterQualificationPage from "./pages/RegisterQualificationPage";
 import SearchPage from "./pages/SearchPage";
+import SearchByNamePage from "./pages/SearchByNamePage";
 import StudentsPage from "./pages/StudentsPage";
 import StudentDetailPage from "./pages/StudentDetailPage";
 import AdminPage from "./pages/AdminPage";
@@ -57,6 +58,7 @@ export default function App() {
           <Route path="/students/:id" element={<StudentDetailPage />} />
           <Route path="/qualifications/new" element={<RegisterQualificationPage />} />
           <Route path="/search" element={<SearchPage />} />
+          <Route path="/search-name" element={<SearchByNamePage />} />
           <Route path="/verify" element={<VerifyPage />} />
           <Route path="/audit" element={<AuditPage />} />
           <Route path="/about" element={<AboutUsPage />} />
