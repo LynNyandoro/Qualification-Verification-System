@@ -7,7 +7,7 @@ import SearchByNamePage from "./pages/SearchByNamePage";
 import { AuthContext } from "./auth";
 import { ThemeProvider, ThemeToggle } from "./theme";
 
-test("login screen explains authorised access and demo accounts", () => {
+test("login screen does not expose demo credentials", () => {
   render(
     <MemoryRouter>
       <ThemeProvider>
@@ -18,7 +18,8 @@ test("login screen explains authorised access and demo accounts", () => {
     </MemoryRouter>
   );
   expect(screen.getByText(/Qualification Verification System/i)).toBeInTheDocument();
-  expect(screen.getByText(/issuer \/ Issuer@123/i)).toBeInTheDocument();
+  expect(screen.queryByText(/student \/ Student@123/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/issuer \/ Issuer@123/i)).not.toBeInTheDocument();
 });
 
 test("about and contact pages link to each other", () => {

@@ -88,9 +88,8 @@ export default function DashboardPage() {
           <>
             <h3>Quick start</h3>
             <p>
-              Demo: credential ID <strong>MISM-MSU-0001</strong> and verification code <strong>QVS-DEMO12345</strong>
-              (Amina Chikomo, MISM, Midlands State University). Student login: <strong>student / Student@123</strong>.
-              Employers: <strong>econet</strong>, <strong>cbz</strong>, <strong>delta</strong>.
+              Use a valid credential ID and verification code to check a record, or sign in with your assigned student,
+              issuer, or verifier account.
             </p>
             {(session?.role === "ADMIN" || session?.role === "ISSUER") && (
               <Link className="button" to="/qualifications/new">

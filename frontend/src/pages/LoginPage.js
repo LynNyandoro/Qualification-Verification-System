@@ -50,10 +50,7 @@ export default function LoginPage() {
         <p className="muted">
           New user? <Link to="/register">Create an account</Link>
         </p>
-        <p className="muted">
-          Demo: student / Student@123 · graduating / Graduating@123 · freshman / Freshman@123 · issuer / Issuer@123 ·
-          econet / Econet@123 · cbz / Cbz@123 · delta / Delta@123. More accounts are in the README.
-        </p>
+        <p className="muted">Use your assigned username and password to sign in.</p>
       </form>
     </div>
   );
