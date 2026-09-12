@@ -1,11 +1,9 @@
 package com.mim736.qvs.web;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mim736.qvs.domain.QualificationType;
-import com.mim736.qvs.web.dto.LoginRequest;
-import com.mim736.qvs.web.dto.QualificationRequest;
-import com.mim736.qvs.web.dto.RegisterRequest;
-import com.mim736.qvs.web.dto.VerifyRequest;
+import java.time.LocalDate;
+
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -13,16 +11,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-
-import java.time.LocalDate;
-
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mim736.qvs.domain.QualificationType;
+import com.mim736.qvs.web.dto.LoginRequest;
+import com.mim736.qvs.web.dto.QualificationRequest;
+import com.mim736.qvs.web.dto.RegisterRequest;
+import com.mim736.qvs.web.dto.VerifyRequest;
 
 @SpringBootTest
 @AutoConfigureMockMvc

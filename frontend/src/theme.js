@@ -31,7 +31,7 @@ export function ThemeProvider({ children }) {
   const value = useMemo(
     () => ({
       dark,
-      toggle: () => setDark((current) => !current),
+      toggle: (nextDark) => setDark((current) => (nextDark === undefined ? !current : nextDark)),
     }),
     [dark]
   );
@@ -45,16 +45,29 @@ export function useTheme() {
 
 export function ThemeToggle() {
   const { dark, toggle } = useTheme();
+
   return (
-    <button
-      type="button"
-      className="ghost theme-toggle"
-      onClick={toggle}
-      aria-pressed={dark}
-      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-      title={dark ? "Light mode" : "Dark mode"}
-    >
-      {dark ? "Light" : "Dark"}
-    </button>
+    <div className="theme-toggle theme-toggle-group" aria-label="Theme selector">
+      <button
+        type="button"
+        className={`theme-option ${!dark ? "active" : ""}`}
+        onClick={() => toggle(false)}
+        aria-pressed={!dark}
+        aria-label="Switch to light mode"
+        title="Light mode"
+      >
+        Light
+      </button>
+      <button
+        type="button"
+        className={`theme-option ${dark ? "active" : ""}`}
+        onClick={() => toggle(true)}
+        aria-pressed={dark}
+        aria-label="Switch to dark mode"
+        title="Dark mode"
+      >
+        Dark
+      </button>
+    </div>
   );
 }
