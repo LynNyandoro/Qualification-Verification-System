@@ -22,7 +22,7 @@ export default function RegisterPage() {
     try {
       const { data } = await api.post("/auth/register", form);
       setSession(data);
-      navigate("/");
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err.response?.data?.error || "Unable to register");
     }

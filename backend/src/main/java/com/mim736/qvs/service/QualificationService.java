@@ -115,11 +115,22 @@ public class QualificationService {
                     .map(QualificationResponse::from)
                     .toList();
         }
+        String normalizedQuery = emptyToNull(query);
+        String normalizedHolder = emptyToNull(holderName);
+        String normalizedTitle = emptyToNull(title);
+        String normalizedInstitution = emptyToNull(institution);
+        if (normalizedQuery == null && normalizedHolder == null && normalizedTitle == null
+                && normalizedInstitution == null && type == null && status == null) {
+            return qualificationRepository.findAllByOrderByCreatedAtDesc()
+                    .stream()
+                    .map(QualificationResponse::from)
+                    .toList();
+        }
         return qualificationRepository.search(
-                        emptyToNull(query),
-                        emptyToNull(holderName),
-                        emptyToNull(title),
-                        emptyToNull(institution),
+                        normalizedQuery,
+                        normalizedHolder,
+                        normalizedTitle,
+                        normalizedInstitution,
                         type,
                         status
                 ).stream()

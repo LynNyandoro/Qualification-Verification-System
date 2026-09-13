@@ -1,11 +1,39 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import App from "./App";
 import LoginPage from "./pages/LoginPage";
 import AboutUsPage from "./pages/AboutUsPage";
 import ContactUsPage from "./pages/ContactUsPage";
 import SearchByNamePage from "./pages/SearchByNamePage";
 import { AuthContext } from "./auth";
 import { ThemeProvider, ThemeToggle } from "./theme";
+
+function renderApp(path) {
+  window.localStorage.removeItem("qvs-auth");
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
+    </MemoryRouter>
+  );
+}
+
+test("root and login routes show the sign-in page", () => {
+  renderApp("/");
+  expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
+  expect(screen.getByText(/sign in as a student/i)).toBeInTheDocument();
+});
+
+test("login path shows the sign-in page", () => {
+  renderApp("/login");
+  expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
+});
+
+test("protected dashboard redirects guests to login", () => {
+  renderApp("/dashboard");
+  expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
+});
 
 test("login screen does not expose demo credentials", () => {
   render(

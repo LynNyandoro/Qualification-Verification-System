@@ -1,6 +1,9 @@
 package com.mim736.qvs.web;
 
+import com.mim736.qvs.service.AgenticInsightsService;
 import com.mim736.qvs.service.VerificationService;
+import com.mim736.qvs.web.dto.AgentInsightRequest;
+import com.mim736.qvs.web.dto.AgentInsightResponse;
 import com.mim736.qvs.web.dto.AuditRecordResponse;
 import com.mim736.qvs.web.dto.VerifyRequest;
 import com.mim736.qvs.web.dto.VerifyResponse;
@@ -20,9 +23,14 @@ import java.util.Map;
 public class VerificationController {
 
     private final VerificationService verificationService;
+    private final AgenticInsightsService agenticInsightsService;
 
-    public VerificationController(VerificationService verificationService) {
+    public VerificationController(
+            VerificationService verificationService,
+            AgenticInsightsService agenticInsightsService
+    ) {
         this.verificationService = verificationService;
+        this.agenticInsightsService = agenticInsightsService;
     }
 
     @PostMapping("/verify")
@@ -40,5 +48,15 @@ public class VerificationController {
     @PreAuthorize("hasAnyRole('ADMIN','VERIFIER')")
     public Map<String, Object> report() {
         return verificationService.verificationReport();
+    }
+
+    @PostMapping("/ai/verification-insights")
+    @PreAuthorize("hasAnyRole('ADMIN','VERIFIER','ISSUER')")
+    public AgentInsightResponse insight(
+            @RequestBody(required = false) AgentInsightRequest request
+    ) {
+        String prompt = request == null ? null : request.getPrompt();
+        Integer maxEvents = request == null ? null : request.getMaxEvents();
+        return agenticInsightsService.generateVerificationInsight(prompt, maxEvents);
     }
 }

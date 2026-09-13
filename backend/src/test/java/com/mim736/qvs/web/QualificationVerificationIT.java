@@ -1,9 +1,13 @@
 package com.mim736.qvs.web;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -33,6 +37,40 @@ class QualificationVerificationIT {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Test
+    void demoCatalogFillsDirectorySearchAndAuditScreens() throws Exception {
+        String adminToken = login("admin", "Admin@123");
+        String verifierToken = login("verifier", "Verifier@123");
+
+        mockMvc.perform(get("/api/qualifications")
+                        .header("Authorization", "Bearer " + verifierToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].credentialId").exists());
+        mockMvc.perform(get("/api/students")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].username").exists());
+        mockMvc.perform(get("/api/audit")
+                        .header("Authorization", "Bearer " + verifierToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].result").exists());
+    }
+
+    @Test
+    void seededStudentsHaveUniqueFullNames() throws Exception {
+        String adminToken = login("admin", "Admin@123");
+        MvcResult students = mockMvc.perform(get("/api/students")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn();
+        Set<String> names = new HashSet<>();
+        for (com.fasterxml.jackson.databind.JsonNode row : objectMapper.readTree(students.getResponse().getContentAsString())) {
+            String fullName = row.get("fullName").asText().toLowerCase();
+            assertTrue(names.add(fullName), "duplicate student name: " + fullName);
+        }
+        assertFalse(names.isEmpty());
+    }
 
     @Test
     void issuerCanRegisterSearchAndVerifierCanConfirmAuthenticity() throws Exception {
@@ -289,6 +327,35 @@ class QualificationVerificationIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.student.username").exists())
                 .andExpect(jsonPath("$.credentials").isArray());
+    }
+
+    @Test
+    void verifierCanRequestAgenticInsights() throws Exception {
+        String verifierToken = login("verifier", "Verifier@123");
+        VerifyRequest verifyRequest = new VerifyRequest();
+        verifyRequest.setVerificationCode("QVS-UNKNOWN-123");
+
+        mockMvc.perform(post("/api/verify")
+                        .header("Authorization", "Bearer " + verifierToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(verifyRequest)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/ai/verification-insights")
+                        .header("Authorization", "Bearer " + verifierToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"prompt":"Highlight verification risks","maxEvents":50}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mode").exists())
+                .andExpect(jsonPath("$.summary").exists())
+                .andExpect(jsonPath("$.recommendedActions").isArray())
+                .andExpect(jsonPath("$.detectedRisks").isArray())
+                .andExpect(jsonPath("$.analysedEvents").isNumber())
+                .andExpect(jsonPath("$.confidenceScore").isNumber())
+                .andExpect(jsonPath("$.trend.direction").exists())
+                .andExpect(jsonPath("$.trend.currentFlagRate").isNumber());
     }
 
     private String login(String username, String password) throws Exception {

@@ -23,6 +23,7 @@ services:
       POSTGRES_PASSWORD: qvs_secret
       QVS_JWT_SECRET: replace-this-with-a-long-production-secret-key
       QVS_CORS_ORIGINS: http://localhost,http://localhost:80
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy

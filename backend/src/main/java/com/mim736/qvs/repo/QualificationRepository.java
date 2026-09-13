@@ -26,16 +26,18 @@ public interface QualificationRepository extends JpaRepository<Qualification, Lo
 
     List<Qualification> findByHolderUsernameIgnoreCaseOrderByCreatedAtDesc(String holderUsername);
 
+    List<Qualification> findAllByOrderByCreatedAtDesc();
+
     @Query("""
             SELECT q FROM Qualification q
             WHERE (:q IS NULL
-                OR LOWER(q.holderName) LIKE LOWER(CONCAT('%', :q, '%'))
-                OR LOWER(q.verificationCode) LIKE LOWER(CONCAT('%', :q, '%'))
-                OR LOWER(q.credentialId) LIKE LOWER(CONCAT('%', :q, '%'))
-                OR (q.holderNationalId IS NOT NULL AND LOWER(q.holderNationalId) LIKE LOWER(CONCAT('%', :q, '%'))))
-              AND (:holderName IS NULL OR LOWER(q.holderName) LIKE LOWER(CONCAT('%', :holderName, '%')))
-              AND (:title IS NULL OR LOWER(q.title) LIKE LOWER(CONCAT('%', :title, '%')))
-              AND (:institution IS NULL OR LOWER(q.issuingInstitution) LIKE LOWER(CONCAT('%', :institution, '%')))
+                OR LOWER(CAST(q.holderName AS string)) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%'))
+                OR LOWER(CAST(q.verificationCode AS string)) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%'))
+                OR LOWER(CAST(q.credentialId AS string)) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%'))
+                OR (q.holderNationalId IS NOT NULL AND LOWER(CAST(q.holderNationalId AS string)) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%'))))
+              AND (:holderName IS NULL OR LOWER(CAST(q.holderName AS string)) LIKE LOWER(CONCAT('%', CAST(:holderName AS string), '%')))
+              AND (:title IS NULL OR LOWER(CAST(q.title AS string)) LIKE LOWER(CONCAT('%', CAST(:title AS string), '%')))
+              AND (:institution IS NULL OR LOWER(CAST(q.issuingInstitution AS string)) LIKE LOWER(CONCAT('%', CAST(:institution AS string), '%')))
               AND (:type IS NULL OR q.type = :type)
               AND (:status IS NULL OR q.status = :status)
             ORDER BY q.createdAt DESC

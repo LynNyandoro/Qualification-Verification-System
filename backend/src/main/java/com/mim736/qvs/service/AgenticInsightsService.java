@@ -116,17 +116,21 @@ public class AgenticInsightsService {
         response.setGeneratedAt(Instant.now());
         response.setNote("Local mode is used when no LLM key is configured.");
 
-        String apiKey = environment.getProperty("qvs.ai.openai-api-key", "");
-        if (isBlank(apiKey)) {
+        LlmSettings llmSettings = resolveLlmSettings();
+        if (llmSettings == null) {
             return response;
         }
 
-        String endpoint = environment.getProperty("qvs.ai.openai-endpoint", "https://api.openai.com/v1/chat/completions");
-        String model = environment.getProperty("qvs.ai.model", "gpt-4o-mini");
         try {
-            LlmInsight llm = requestLlmInsight(endpoint, apiKey.trim(), model, effectivePrompt, response);
+            LlmInsight llm = requestLlmInsight(
+                    llmSettings.endpoint(),
+                    llmSettings.apiKey(),
+                    llmSettings.model(),
+                    effectivePrompt,
+                    response
+            );
             response.setMode("LLM_ASSISTED");
-            response.setModel(model);
+            response.setModel(llmSettings.model());
             if (!isBlank(llm.summary())) {
                 response.setSummary(llm.summary());
             }
@@ -141,6 +145,35 @@ public class AgenticInsightsService {
             response.setNote("Fell back to local heuristics because LLM call failed: " + ex.getMessage());
         }
         return response;
+    }
+
+    private LlmSettings resolveLlmSettings() {
+        String groqKey = environment.getProperty("qvs.ai.groq-api-key", "");
+        if (!isBlank(groqKey)) {
+            String model = firstNonBlank(
+                    environment.getProperty("qvs.ai.model", ""),
+                    environment.getProperty("qvs.ai.groq-model", "openai/gpt-oss-20b")
+            );
+            String endpoint = environment.getProperty(
+                    "qvs.ai.groq-endpoint",
+                    "https://api.groq.com/openai/v1/chat/completions"
+            );
+            return new LlmSettings(groqKey.trim(), endpoint, model);
+        }
+        String openaiKey = environment.getProperty("qvs.ai.openai-api-key", "");
+        if (!isBlank(openaiKey)) {
+            String model = firstNonBlank(environment.getProperty("qvs.ai.model", ""), "gpt-4o-mini");
+            String endpoint = environment.getProperty(
+                    "qvs.ai.openai-endpoint",
+                    "https://api.openai.com/v1/chat/completions"
+            );
+            return new LlmSettings(openaiKey.trim(), endpoint, model);
+        }
+        return null;
+    }
+
+    private String firstNonBlank(String preferred, String fallback) {
+        return isBlank(preferred) ? fallback : preferred.trim();
     }
 
     private LlmInsight requestLlmInsight(
@@ -169,7 +202,8 @@ public class AgenticInsightsService {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() >= 300) {
-            throw new IOException("LLM request failed with HTTP " + response.statusCode());
+            throw new IOException("LLM request failed with HTTP " + response.statusCode()
+                    + ": " + response.body().substring(0, Math.min(180, response.body().length())));
         }
 
         JsonNode root = objectMapper.readTree(response.body());
@@ -419,6 +453,9 @@ public class AgenticInsightsService {
 
     private int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private record LlmSettings(String apiKey, String endpoint, String model) {
     }
 
     private record LlmInsight(String summary, List<String> detectedRisks, List<String> recommendedActions) {

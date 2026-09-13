@@ -7,21 +7,42 @@ import com.mim736.qvs.domain.QualificationType;
 import com.mim736.qvs.domain.Role;
 import com.mim736.qvs.domain.StudentStage;
 import com.mim736.qvs.domain.UserAccount;
+import com.mim736.qvs.domain.VerificationRecord;
+import com.mim736.qvs.domain.VerificationResult;
 import com.mim736.qvs.repo.InstitutionRepository;
 import com.mim736.qvs.repo.QualificationRepository;
 import com.mim736.qvs.repo.UserAccountRepository;
+import com.mim736.qvs.repo.VerificationRecordRepository;
 import com.mim736.qvs.service.CredentialHashService;
 import com.mim736.qvs.service.CredentialIds;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Configuration
 public class DataSeeder {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DataSeeder.class);
+    private static final int TARGET_AUDIT_EVENTS = 80;
+    private static final Pattern TRAILING_INDEX = Pattern.compile("(\\d+)$");
+    private static final String[] MIDDLE_NAMES = {
+            "Ade", "Itai", "Lee", "Kai", "Neo", "Joy", "Ann", "Ivy", "Max", "Ari"
+    };
 
     private static final String[] FIRST_NAMES = {
             "Amina", "Tendai", "Nyasha", "Farai", "Chido", "Kudzai", "Tatenda", "Panashe", "Blessing", "Tanaka",
@@ -49,6 +70,7 @@ public class DataSeeder {
             InstitutionRepository institutionRepository,
             UserAccountRepository userAccountRepository,
             QualificationRepository qualificationRepository,
+            VerificationRecordRepository verificationRecordRepository,
             PasswordEncoder passwordEncoder
     ) {
         return args -> {
@@ -85,12 +107,27 @@ public class DataSeeder {
                     "Rudo Moyo", Role.STUDENT, "Freshman@123", uz, StudentStage.ENROLLED);
 
             String studentHash = passwordEncoder.encode("Student@123");
+            Set<String> takenNames = new HashSet<>();
+            takenNames.add("amina chikomo");
+            takenNames.add("tawanda ncube");
+            takenNames.add("rudo moyo");
             populateCampus(userAccountRepository, qualificationRepository, msu, msuIssuer, studentHash,
-                    new NamedStudent("student", "Amina Chikomo", StudentStage.ALUMNI, 0));
+                    new NamedStudent("student", "Amina Chikomo", StudentStage.ALUMNI, 0), takenNames);
             populateCampus(userAccountRepository, qualificationRepository, nust, nustIssuer, studentHash,
-                    new NamedStudent("graduating", "Tawanda Ncube", StudentStage.GRADUATING, 16));
+                    new NamedStudent("graduating", "Tawanda Ncube", StudentStage.GRADUATING, 16), takenNames);
             populateCampus(userAccountRepository, qualificationRepository, uz, uzIssuer, studentHash,
-                    new NamedStudent("freshman", "Rudo Moyo", StudentStage.ENROLLED, 5));
+                    new NamedStudent("freshman", "Rudo Moyo", StudentStage.ENROLLED, 5), takenNames);
+
+            uniquifyStudentNames(userAccountRepository, qualificationRepository);
+
+            applyDemoStatuses(qualificationRepository);
+            seedVerificationHistory(verificationRecordRepository, qualificationRepository, userAccountRepository);
+            LOG.info(
+                    "Demo catalog ready: {} students, {} credentials, {} verification events",
+                    userAccountRepository.findByRoleOrderByFullNameAsc(Role.STUDENT).size(),
+                    qualificationRepository.count(),
+                    verificationRecordRepository.count()
+            );
         };
     }
 
@@ -100,7 +137,8 @@ public class DataSeeder {
             Institution institution,
             UserAccount issuer,
             String studentHash,
-            NamedStudent featured
+            NamedStudent featured,
+            Set<String> takenNames
     ) {
         int existing = (int) users.countStudentsAtInstitution(Role.STUDENT, institution.getCode());
         int index = 0;
@@ -108,7 +146,9 @@ public class DataSeeder {
             NamedStudent named = index == featured.slot() ? featured : null;
             String username = named != null ? named.username() : generatedUsername(institution, index);
             if (!users.existsByUsername(username)) {
-                String fullName = named != null ? named.fullName() : generatedName(institution, index);
+                String fullName = named != null
+                        ? named.fullName()
+                        : allocateUniqueName(username, institution, takenNames);
                 StudentStage stage = named != null ? named.stage() : stageFor(index);
                 String email = emailFor(username, institution);
                 if (!users.existsByEmail(email)) {
@@ -153,6 +193,86 @@ public class DataSeeder {
         }
     }
 
+    private static void uniquifyStudentNames(
+            UserAccountRepository users,
+            QualificationRepository qualifications
+    ) {
+        List<UserAccount> students = new ArrayList<>(users.findByRoleOrderByFullNameAsc(Role.STUDENT));
+        students.sort((left, right) -> left.getUsername().compareToIgnoreCase(right.getUsername()));
+        Set<String> taken = new HashSet<>();
+        for (String featured : List.of("student", "graduating", "freshman")) {
+            users.findByUsername(featured).ifPresent(account -> {
+                if (account.getFullName() != null && !account.getFullName().isBlank()) {
+                    taken.add(account.getFullName().toLowerCase(Locale.ROOT));
+                }
+            });
+        }
+        int renamed = 0;
+        for (UserAccount student : students) {
+            if ("student".equals(student.getUsername())
+                    || "graduating".equals(student.getUsername())
+                    || "freshman".equals(student.getUsername())) {
+                continue;
+            }
+            String current = student.getFullName() == null ? "" : student.getFullName().trim();
+            String key = current.toLowerCase(Locale.ROOT);
+            if (!current.isBlank() && taken.add(key)) {
+                continue;
+            }
+            String unique = allocateUniqueName(student.getUsername(), student.getInstitution(), taken);
+            student.setFullName(unique);
+            users.save(student);
+            for (Qualification qualification : qualifications.findByHolderUsernameIgnoreCaseOrderByCreatedAtDesc(
+                    student.getUsername())) {
+                qualification.setHolderName(unique);
+                qualification.setCredentialHash(CredentialHashService.hash(qualification));
+                qualification.setUpdatedAt(Instant.now());
+                qualifications.save(qualification);
+            }
+            renamed++;
+        }
+        if (renamed > 0) {
+            LOG.info("Assigned unique full names to {} seeded students", renamed);
+        }
+    }
+
+    private static String allocateUniqueName(String username, Institution institution, Set<String> taken) {
+        int seed = extractIndex(username);
+        if (institution != null) {
+            seed += Math.abs(institution.getCode().hashCode()) * 17;
+        }
+        for (int attempt = 0; attempt < 10_000; attempt++) {
+            String candidate = composeName(seed + attempt);
+            if (taken.add(candidate.toLowerCase(Locale.ROOT))) {
+                return candidate;
+            }
+        }
+        String fallback = "Student " + username;
+        taken.add(fallback.toLowerCase(Locale.ROOT));
+        return fallback;
+    }
+
+    private static String composeName(int id) {
+        int safe = id == Integer.MIN_VALUE ? 0 : Math.abs(id);
+        int grid = FIRST_NAMES.length * LAST_NAMES.length;
+        String first = FIRST_NAMES[safe % FIRST_NAMES.length];
+        String last = LAST_NAMES[(safe / FIRST_NAMES.length) % LAST_NAMES.length];
+        int cycle = safe / grid;
+        if (cycle <= 0) {
+            return first + " " + last;
+        }
+        String middle = MIDDLE_NAMES[(cycle - 1) % MIDDLE_NAMES.length];
+        return first + " " + middle + " " + last;
+    }
+
+    private static int extractIndex(String username) {
+        Matcher matcher = TRAILING_INDEX.matcher(username == null ? "" : username);
+        if (matcher.find()) {
+            return Integer.parseInt(matcher.group(1));
+        }
+        return Math.abs((username == null ? "student" : username).hashCode());
+    }
+
     private static StudentStage stageFor(int index) {
         if (index < 20) {
             return StudentStage.ENROLLED;
@@ -165,12 +285,6 @@ public class DataSeeder {
 
     private static String generatedUsername(Institution institution, int index) {
         return institution.getCode().toLowerCase() + String.format("%03d", index);
-    }
-
-    private static String generatedName(Institution institution, int index) {
-        String first = FIRST_NAMES[index % FIRST_NAMES.length];
-        String last = LAST_NAMES[(index + institution.getCode().length()) % LAST_NAMES.length];
-        return first + " " + last;
     }
 
     private static void createStudent(
@@ -241,6 +355,118 @@ public class DataSeeder {
     private static String emailFor(String username, Institution institution) {
         String domain = institution.getCode().toLowerCase() + ".ac.zw";
         return username.replace('.', '-') + "@" + domain;
+    }
+
+    private static void applyDemoStatuses(QualificationRepository repository) {
+        List<Qualification> all = repository.findAll();
+        boolean hasRevoked = all.stream().anyMatch(item -> item.getStatus() == QualificationStatus.REVOKED);
+        boolean hasExpired = all.stream().anyMatch(item -> item.getStatus() == QualificationStatus.EXPIRED);
+        if (hasRevoked && hasExpired) {
+            return;
+        }
+        int index = 0;
+        for (Qualification qualification : all) {
+            if ("student".equals(qualification.getHolderUsername())) {
+                continue;
+            }
+            index++;
+            if (!hasRevoked && index % 17 == 0) {
+                qualification.setStatus(QualificationStatus.REVOKED);
+                qualification.setUpdatedAt(Instant.now());
+                repository.save(qualification);
+            } else if (!hasExpired && index % 19 == 0) {
+                qualification.setExpiryDate(LocalDate.of(2023, 12, 31));
+                qualification.setStatus(QualificationStatus.EXPIRED);
+                qualification.setCredentialHash(CredentialHashService.hash(qualification));
+                qualification.setUpdatedAt(Instant.now());
+                repository.save(qualification);
+            }
+        }
+    }
+
+    private static void seedVerificationHistory(
+            VerificationRecordRepository records,
+            QualificationRepository qualifications,
+            UserAccountRepository users
+    ) {
+        long existing = records.count();
+        if (existing >= TARGET_AUDIT_EVENTS) {
+            return;
+        }
+        List<UserAccount> verifiers = List.of("econet", "cbz", "delta", "verifier").stream()
+                .map(username -> users.findByUsername(username).orElse(null))
+                .filter(Objects::nonNull)
+                .toList();
+        List<Qualification> catalog = qualifications.findAll();
+        if (verifiers.isEmpty() || catalog.isEmpty()) {
+            return;
+        }
+        List<Qualification> active = catalog.stream()
+                .filter(item -> item.getStatus() == QualificationStatus.ACTIVE)
+                .toList();
+        List<Qualification> revoked = catalog.stream()
+                .filter(item -> item.getStatus() == QualificationStatus.REVOKED)
+                .toList();
+        List<Qualification> expired = catalog.stream()
+                .filter(item -> item.getStatus() == QualificationStatus.EXPIRED)
+                .toList();
+        List<Qualification> validPool = active.isEmpty() ? catalog : active;
+
+        Instant now = Instant.now();
+        int needed = TARGET_AUDIT_EVENTS - (int) existing;
+        List<VerificationRecord> batch = new ArrayList<>(needed);
+        for (int i = 0; i < needed; i++) {
+            UserAccount verifier = verifiers.get(i % verifiers.size());
+            int kind = i % 10;
+            VerificationRecord record = new VerificationRecord();
+            record.setVerifiedBy(verifier);
+            record.setVerifiedAt(now.minus(Duration.ofHours(4L * i + 2)));
+            if (kind == 0) {
+                record.setResult(VerificationResult.NOT_FOUND);
+                record.setMethod("CODE");
+                record.setVerificationCodeAttempted("QVS-FAKE" + String.format("%05d", i));
+                record.setNotes("No matching record");
+            } else if (kind == 1 && !revoked.isEmpty()) {
+                Qualification qualification = revoked.get(i % revoked.size());
+                fillAttempt(record, qualification, "CREDENTIAL_ID");
+                record.setResult(VerificationResult.REVOKED);
+                record.setNotes("This qualification has been revoked by the issuing authority.");
+            } else if (kind == 2 && !expired.isEmpty()) {
+                Qualification qualification = expired.get(i % expired.size());
+                fillAttempt(record, qualification, "CODE");
+                record.setResult(VerificationResult.EXPIRED);
+                record.setNotes("This qualification has expired.");
+            } else if (kind == 3) {
+                Qualification qualification = validPool.get(i % validPool.size());
+                fillAttempt(record, qualification, "HASH");
+                record.setResult(VerificationResult.TAMPERED);
+                record.setNotes("Stored integrity hash does not match the canonical credential payload.");
+            } else if (kind == 4) {
+                Qualification qualification = validPool.get(i % validPool.size());
+                fillAttempt(record, qualification, "CANDIDATE_NAME");
+                record.setResult(VerificationResult.INVALID);
+                record.setNotes("Candidate details did not match the stored credential.");
+            } else {
+                Qualification qualification = validPool.get(i % validPool.size());
+                String method = switch (i % 3) {
+                    case 0 -> "CODE";
+                    case 1 -> "CREDENTIAL_ID";
+                    default -> "CANDIDATE_NAME";
+                };
+                fillAttempt(record, qualification, method);
+                record.setResult(VerificationResult.VALID);
+                record.setNotes("Qualification is authentic and currently active.");
+            }
+            batch.add(record);
+        }
+        records.saveAll(batch);
+    }
+
+    private static void fillAttempt(VerificationRecord record, Qualification qualification, String method) {
+        record.setQualification(qualification);
+        record.setCredentialIdAttempted(qualification.getCredentialId());
+        record.setVerificationCodeAttempted(qualification.getVerificationCode());
+        record.setMethod(method);
     }
 
     private static Institution upsertInstitution(InstitutionRepository repository, String code, String name) {

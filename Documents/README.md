@@ -27,7 +27,9 @@ DevOps-enabled system for **MIM736 Practical Assignment (August 2026)**. Authori
 | `verifier` | `Verifier@123` | Demo employer | Same verify role as the three companies |
 | `admin` | `Admin@123` | Operator | Directory of every user, campus and student |
 
-Seeded volume: **3 universities** (UZ, NUST, MSU) with **100 students each**, most alumni holding a unique programme **credential ID** (for example `MISM-MSU-0001`) and a separate **verification code** (`QVS-…`). **3 employers** (Econet, CBZ, Delta). Students copy either value; employers paste it in Search or Verify.
+For assessment convenience, demo accounts are listed in this README, but the login/dashboard UI does not display the full sample account list as on-screen copy.
+
+Seeded volume: **3 universities** (UZ, NUST, MSU) with **100 students each**, each with a **unique full name**. Most alumni hold a unique programme **credential ID** (for example `MISM-MSU-0001`) and a separate **verification code** (`QVS-…`). A sample of credentials is marked **revoked** or **expired**. Startup also writes about **80 mixed verification events** so Audit, Dashboard stats and AI insights are populated. **3 employers** (Econet, CBZ, Delta). Students copy either identifier; employers paste it in Search or Verify.
 
 ## Local run (development)
 
@@ -46,7 +48,7 @@ npm install --legacy-peer-deps
 npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The CRA dev server proxies `/api` to `http://localhost:8080`.
+Open [http://localhost:3000](http://localhost:3000). The first screen is **sign in** (`/` and `/login`). The CRA dev server proxies `/api` to `http://localhost:8080`. After login the app opens `/dashboard`. Protected routes send guests back to `/login`.
 
 If `mvn spring-boot:run` fails with `Value not permitted for column ... "STUDENT"`, stop any other Java process on port 8080, then run again. The API now converts the old H2 `ROLE` enum to `VARCHAR` on startup. To reset demo data completely:
 
@@ -70,7 +72,31 @@ Coverage HTML: `backend/target/site/jacoco/index.html`.
 docker compose up --build
 ```
 
-UI: [http://localhost](http://localhost) · API: [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health)
+UI: [http://localhost](http://localhost) (login first) · API: [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health)
+
+If your existing PostgreSQL volume was created from an older schema where qualification text fields were persisted as `bytea`, the API now auto-aligns those columns to `varchar` on startup before search queries run. Unfiltered catalog listing no longer uses `LOWER(CONCAT(...))` against Postgres, so Search and Dashboard stay populated. If startup still fails because the old volume is corrupted or incompatible, recreate it:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+### Optional LLM assist for agentic insights
+
+The `/api/ai/verification-insights` endpoint and the **AI insights** page always compute counts from the audit table. Narrative text is **rule-based** unless a key is set. Prefer Groq (OpenAI-compatible). Put the key in a gitignored `.env` at the repo root so Docker Compose can inject it:
+
+```bash
+GROQ_API_KEY=<your_groq_key>
+```
+
+Default Groq model: `openai/gpt-oss-20b` (`QVS_AI_GROQ_MODEL` to override). OpenAI still works with:
+
+```bash
+QVS_AI_OPENAI_API_KEY=<your_api_key>
+QVS_AI_MODEL=gpt-4o-mini
+```
+
+Do not commit API keys. If Groq is configured, the page mode is `LLM_ASSISTED`; otherwise `RULE_BASED`. Verify results stay deterministic either way.
 
 ## Repository layout
 
@@ -87,5 +113,6 @@ docs/        Report, contribution statement, Git workflow, issues
 2. Search/retrieve — `GET /api/qualifications`
 3. Verify authenticity — `POST /api/verify` (code, credential ID, optional SHA-256)
 4. Audit history — `GET /api/audit`
+5. Agentic AI analytics — `POST /api/ai/verification-insights` (risk patterns, confidence score, trend vs previous window, recommendations, method/result breakdowns)
 
 Evidence for Git, CI, testing and evaluation lives under `docs/`.

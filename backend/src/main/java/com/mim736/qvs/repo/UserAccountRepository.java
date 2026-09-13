@@ -17,6 +17,8 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
 
     boolean existsByEmail(String email);
 
+    boolean existsByRoleAndFullNameIgnoreCase(Role role, String fullName);
+
     List<UserAccount> findByRoleOrderByFullNameAsc(Role role);
 
     @Query("SELECT u FROM UserAccount u WHERE u.role = :role AND u.institution.code = :code ORDER BY u.fullName ASC")

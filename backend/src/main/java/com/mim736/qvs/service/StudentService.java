@@ -68,6 +68,9 @@ public class StudentService {
         if (userAccountRepository.existsByEmail(request.getEmail())) {
             throw new BusinessException("Email is already registered");
         }
+        if (userAccountRepository.existsByRoleAndFullNameIgnoreCase(Role.STUDENT, request.getFullName().trim())) {
+            throw new BusinessException("A student with this name already exists");
+        }
         Institution institution = resolveInstitution(request.getInstitutionCode(), actor);
         UserAccount student = new UserAccount();
         student.setUsername(request.getUsername().trim());

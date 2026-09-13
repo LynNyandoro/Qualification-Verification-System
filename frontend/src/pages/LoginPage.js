@@ -1,18 +1,15 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../api";
 import { useAuth } from "../auth";
 import { ThemeToggle } from "../theme";
 
 export default function LoginPage() {
-  const { session, setSession } = useAuth();
+  const { setSession } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState({ username: "verifier", password: "Verifier@123" });
   const [error, setError] = useState("");
-
-  if (session) {
-    return <Navigate to="/" replace />;
-  }
 
   async function onSubmit(event) {
     event.preventDefault();
@@ -20,7 +17,8 @@ export default function LoginPage() {
     try {
       const { data } = await api.post("/auth/login", form);
       setSession(data);
-      navigate("/");
+      const from = location.state?.from;
+      navigate(from && from !== "/login" ? from : "/dashboard", { replace: true });
     } catch (err) {
       setError(err.response?.data?.error || "Unable to sign in");
     }

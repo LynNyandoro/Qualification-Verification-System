@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Layout from "./components/Layout";
 import { AuthContext } from "./auth";
 import AboutUsPage from "./pages/AboutUsPage";
+import AgentInsightsPage from "./pages/AgentInsightsPage";
 import AuditPage from "./pages/AuditPage";
 import ContactUsPage from "./pages/ContactUsPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -26,6 +27,14 @@ function Protected({ children }) {
   return children;
 }
 
+function GuestOnly({ children }) {
+  const { session } = useAuth();
+  if (session) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+}
+
 export default function App() {
   const [session, setSession] = useState(() => {
     const raw = localStorage.getItem("qvs-auth");
@@ -43,7 +52,22 @@ export default function App() {
   return (
     <AuthContext.Provider value={{ session, setSession }}>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/"
+          element={
+            <GuestOnly>
+              <LoginPage />
+            </GuestOnly>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <GuestOnly>
+              <LoginPage />
+            </GuestOnly>
+          }
+        />
         <Route path="/register" element={<RegisterPage />} />
         <Route
           element={
@@ -52,7 +76,7 @@ export default function App() {
             </Protected>
           }
         >
-          <Route path="/" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/students" element={<StudentsPage />} />
           <Route path="/students/:id" element={<StudentDetailPage />} />
@@ -61,10 +85,11 @@ export default function App() {
           <Route path="/search-name" element={<SearchByNamePage />} />
           <Route path="/verify" element={<VerifyPage />} />
           <Route path="/audit" element={<AuditPage />} />
+          <Route path="/ai-insights" element={<AgentInsightsPage />} />
           <Route path="/about" element={<AboutUsPage />} />
           <Route path="/contact" element={<ContactUsPage />} />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </AuthContext.Provider>
   );

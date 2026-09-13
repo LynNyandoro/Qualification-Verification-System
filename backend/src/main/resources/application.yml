@@ -39,6 +39,13 @@ qvs:
     expiration-ms: 86400000
   cors:
     allowed-origins: ${QVS_CORS_ORIGINS:http://localhost:3000,http://localhost}
+  ai:
+    model: ${QVS_AI_MODEL:}
+    groq-api-key: ${GROQ_API_KEY:}
+    groq-endpoint: ${QVS_AI_GROQ_ENDPOINT:https://api.groq.com/openai/v1/chat/completions}
+    groq-model: ${QVS_AI_GROQ_MODEL:openai/gpt-oss-20b}
+    openai-api-key: ${QVS_AI_OPENAI_API_KEY:}
+    openai-endpoint: ${QVS_AI_OPENAI_ENDPOINT:https://api.openai.com/v1/chat/completions}
 
 logging:
   level:
